@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36705.20
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offipelago", "Offipelago.csproj", "{4ECF84AC-6320-4387-98E1-870309A1D40A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4ECF84AC-6320-4387-98E1-870309A1D40A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4ECF84AC-6320-4387-98E1-870309A1D40A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4ECF84AC-6320-4387-98E1-870309A1D40A}.Release|Any CPU.ActiveCfg = Release|x64
+		{4ECF84AC-6320-4387-98E1-870309A1D40A}.Release|Any CPU.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {01C17701-86DC-4168-B6D2-F48065FC0A91}
+	EndGlobalSection
+EndGlobal
