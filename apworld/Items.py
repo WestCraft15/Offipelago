@@ -4,22 +4,26 @@ from typing import Dict, List, Optional
 
 from BaseClasses import ItemClassification
 
-from .constants import ITEM_ID_START
+from .constants import ITEM_ID_START, NUM_PROGRESSIVE_ZONE_STEPS
 
 
 class ItemType(Enum):
-    KEY = auto()            # Zone cards / plot keys
-    GRAND = auto()           # The 5 "Grand" objects for Zacharie's Secret Boss sidequest
-    LIBRARY = auto()         # Books borrowed from the Zone 2 Library
-    MISC = auto()            # Other unique key-item-flavored collectibles
+    KEY = auto()               # Zone cards / plot keys (individual, non-progressive mode)
+    PROGRESSIVE_ZONE = auto()  # "Progressive Zone" (progressive_zones mode)
+    PURIFIED_KEY = auto()      # Unlocks for purified Zone 2 / Zone 3 (zones_are_unlocks)
+    GRAND = auto()             # The 5 "Grand" objects for Zacharie's Secret Boss sidequest
+    LIBRARY = auto()           # Books borrowed from the Zone 2 Library
+    MISC = auto()              # Other unique key-item-flavored collectibles
     WEAPON = auto()
     SHIELD = auto()
     BODY = auto()
     HEAD = auto()
     ACCESSORY = auto()
-    SPECIAL = auto()         # Combat consumables (Inspiration/Expiration)
+    PROGRESSIVE_EQUIP = auto()  # Progressive equipment items (progressive_equipment mode)
+    SPECIAL = auto()           # Combat consumables (Inspiration/Expiration)
     MEDICINE = auto()
-    SEED = auto()            # Stat-boosting orbs
+    SEED = auto()               # Stat-boosting orbs
+    MACGUFFIN = auto()          # macguffin_hunt goal item
     FILLER = auto()
     EVENT = auto()
 
@@ -30,14 +34,12 @@ class ItemData(typing.NamedTuple):
     classification: ItemClassification
     event: bool = False
 
+_individual_zone_cards: List[str] = [
+    "Leo-card", "Cancer-card", "Pisces-card", "Aquarius-card", "Sagittarius-card",
+]
 
 _key_items: List[typing.Tuple[str, ItemClassification]] = [
-    ("Leo-card", ItemClassification.progression),           # Allows access to Zone 1
-    ("Cancer-card", ItemClassification.progression),        # Allows access to Zone 2
-    ("Pisces-card", ItemClassification.progression),        # Allows access to Zone 3
-    ("Aquarius-card", ItemClassification.progression),      # Allows access to The Room
-    ("Sagittarius-card", ItemClassification.progression),   # Allows access to The Room (again) / Chambre
-    ("Aries-card", ItemClassification.progression),         # Allows access to a secret place
+    ("Aries-card", ItemClassification.progression),         # Allows access to the secret place
     ("Access Card", ItemClassification.progression),        # Permits access to Area 4 of Zone 3
     ("Necktie", ItemClassification.progression_deprioritized),
     ("Music Box", ItemClassification.useful),
@@ -70,39 +72,51 @@ _misc_items: List[str] = [
     "Eye",
 ]
 
-_weapons: List[str] = [
-    # Batter's bats
+# I split the equipment by category so each can be tracked for progressive :p
+_batter_weapons: List[str] = [
     "Harold Bat", "Masashi Bat", "Emmanuel Bat", "Michael Bat",
     "Yoshihiro Bat", "Lewis Bat", "Katsuhiro Bat", "Ashley Bat",
-    # Add-Ons' symbols
+]
+_addon_weapons: List[str] = [
     "Audacious Symbol", "Persistant Symbol", "Choleric Symbol", "Battlesome Symbol",
     "Loyal Symbol", "Solid Symbol", "Vengeful Symbol", "Hidden Symbol",
     "Fast Symbol", "Aggressive Symbol", "Silent Symbol", "Luminous Symbol",
     "Boastful Symbol", "Mysterious Symbol", "Temperamental Symbol", "Bleeding Symbol",
     "Perfect Symbol",
 ]
-
 _shields: List[str] = [
     "Aura of Justice", "Aura of Fear", "Aura of Perception", "Aura of Greatness",
     "Aura of Clairvoyance", "Aura of Tenacity", "Aura of Lunacy", "Aura of Power",
 ]
-
-_bodies: List[str] = [
-    # Batter's tunics
-    "Nicolas Tunic", "David Tunic", "Min-Woo Tunic", "Canepa Tunic", "Taiyou Tunic", "Neil Tunic",
-    # Add-Ons' epidermises
-    "Radius Epidermis", "Ulna Epidermis", "Humerus Epidermis",
-    "Tibia Epidermis", "Fibula Epidermis", "Femur Epidermis",
-]
-
+_batter_body: List[str] = ["Nicolas Tunic", "David Tunic", "Min-Woo Tunic", "Canepa Tunic", "Taiyou Tunic", "Neil Tunic"]
+_addon_body: List[str] = ["Radius Epidermis", "Ulna Epidermis", "Humerus Epidermis", "Tibia Epidermis", "Fibula Epidermis", "Femur Epidermis"]
 _heads: List[str] = [
     "Colour of Wrath", "Colour of Pain", "Colour of Sadness", "Colour of Hatred",
     "Colour of Force", "Colour of Defeat", "Colour of Neglect", "The Eighth Colour",
 ]
-
 _accessories: List[str] = [
     "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Secret day",
 ]
+
+# Flat-mode groups, keyed by the ItemType they're tagged with.
+FLAT_EQUIPMENT_GROUPS: Dict[ItemType, List[str]] = {
+    ItemType.WEAPON: _batter_weapons + _addon_weapons,
+    ItemType.SHIELD: _shields,
+    ItemType.BODY: _batter_body + _addon_body,
+    ItemType.HEAD: _heads,
+    ItemType.ACCESSORY: _accessories,
+}
+
+# Number of progressive stuff
+PROGRESSIVE_EQUIPMENT_COUNTS: Dict[str, int] = {
+    "Progressive Batter Weapon": len(_batter_weapons),
+    "Progressive Add-On Weapon": len(_addon_weapons),
+    "Progressive Shield": len(_shields),
+    "Progressive Batter Body": len(_batter_body),
+    "Progressive Add-On Body": len(_addon_body),
+    "Progressive Head": len(_heads),
+    "Progressive Accessory": len(_accessories),
+}
 
 _specials: List[str] = ["Inspiration", "Expiration"]
 
@@ -115,6 +129,12 @@ _seeds: List[str] = [
     "Taurus-orb", "Libra-orb", "Scorpio-orb", "Gemini-orb", "Capricorn-orb", "Virgo-orb",
 ]
 
+PURIFIED_KEY_ITEMS: List[str] = ["Zone 2 Purified Key", "Zone 3 Purified Key"]
+
+PROGRESSIVE_ZONE_ITEM = "Progressive Zone"
+
+MACGUFFIN_ITEM = "MacGuffin"
+
 
 def _build_item_table() -> Dict[str, ItemData]:
     table: Dict[str, ItemData] = {}
@@ -126,23 +146,41 @@ def _build_item_table() -> Dict[str, ItemData]:
             table[n] = ItemData(code, itype, classification)
             code += 1
 
+    # Both zone-card representations are reserved; only one set is actually placed in the
+    # pool for a given seed, chosen in world.create_items() based on progressive_zones.
+    add(_individual_zone_cards, ItemType.KEY, ItemClassification.progression)
+    table[PROGRESSIVE_ZONE_ITEM] = ItemData(code, ItemType.PROGRESSIVE_ZONE, ItemClassification.progression)
+    code += 1
+
     for name, classification in _key_items:
         table[name] = ItemData(code, ItemType.KEY, classification)
         code += 1
 
+    add(PURIFIED_KEY_ITEMS, ItemType.PURIFIED_KEY, ItemClassification.progression)
     add(_grand_items, ItemType.GRAND, ItemClassification.progression)
     add(_library_items, ItemType.LIBRARY, ItemClassification.useful)
     add(_misc_items, ItemType.MISC, ItemClassification.useful)
-    add(_weapons, ItemType.WEAPON, ItemClassification.useful)
-    add(_shields, ItemType.SHIELD, ItemClassification.useful)
-    add(_bodies, ItemType.BODY, ItemClassification.useful)
-    add(_heads, ItemType.HEAD, ItemClassification.useful)
-    add(_accessories, ItemType.ACCESSORY, ItemClassification.useful)
+
+    # Flat equipment (used when progressive_equipment is off).
+    add(FLAT_EQUIPMENT_GROUPS[ItemType.WEAPON], ItemType.WEAPON, ItemClassification.useful)
+    add(FLAT_EQUIPMENT_GROUPS[ItemType.SHIELD], ItemType.SHIELD, ItemClassification.useful)
+    add(FLAT_EQUIPMENT_GROUPS[ItemType.BODY], ItemType.BODY, ItemClassification.useful)
+    add(FLAT_EQUIPMENT_GROUPS[ItemType.HEAD], ItemType.HEAD, ItemClassification.useful)
+    add(FLAT_EQUIPMENT_GROUPS[ItemType.ACCESSORY], ItemType.ACCESSORY, ItemClassification.useful)
+
+    # Progressive equipment (used when progressive_equipment is on)
+    for name in PROGRESSIVE_EQUIPMENT_COUNTS:
+        table[name] = ItemData(code, ItemType.PROGRESSIVE_EQUIP, ItemClassification.useful)
+        code += 1
+
     add(_specials, ItemType.SPECIAL, ItemClassification.useful)
     add(_medicine, ItemType.MEDICINE, ItemClassification.filler)
     add(_seeds, ItemType.SEED, ItemClassification.useful)
 
-    # Generic padding item representing money found in the world; used to fill out the
+    # macguffin_hunt goal item; quantity is decided per-seed in world.create_items().
+    table[MACGUFFIN_ITEM] = ItemData(code, ItemType.MACGUFFIN, ItemClassification.progression)
+    code += 1
+
     # remainder of the item pool once every unique item above has been placed once.
     table["Cash"] = ItemData(code, ItemType.FILLER, ItemClassification.filler)
     code += 1
@@ -155,6 +193,17 @@ item_table: Dict[str, ItemData] = _build_item_table()
 # Locked event items for logic completion stuff
 event_item_table: Dict[str, ItemData] = {
     "Victory": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
+    "Dedan Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
+    "Japhet Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
+    "Enoch Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
+    **{
+        f"Zodiac {i} Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True)
+        for i in range(1, 5)
+    },
+    **{
+        f"Secret Boss {i} Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True)
+        for i in range(1, 7)
+    },
 }
 
 filler_item_names: List[str] = ["Cash"]

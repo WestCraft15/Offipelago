@@ -2,7 +2,7 @@ import typing
 from enum import Enum, auto
 from typing import Dict, List, Optional
 
-from .constants import LOCATION_ID_START
+from .constants import LOCATION_ID_START, MAX_SHOP_SLOTS_PER_SHOP, SHOP_NAMES
 
 
 class LocationType(Enum):
@@ -12,6 +12,8 @@ class LocationType(Enum):
     BOSS = auto()
     PILLAR_ART = auto()
     SECRET_BOSS = auto()
+    SHOP = auto()
+    NPC = auto()
     EVENT = auto()
 
 
@@ -40,6 +42,7 @@ ZONE_2_PURIFIED_BOOKS = _numbered("Zone 2 Purified Library Book", 8)
 POSTAL_HINTS = _numbered("Postal Hint", 6)
 
 BOSS_LOCATIONS = ["Zone 1 Boss - Dedan", "Zone 2 Boss - Japhet", "Zone 3 Boss - Enoch"]
+ZODIAC_BOSS_LOCATIONS = _numbered("Zodiac Boss", 4)
 
 PILLAR_ART_LOCATIONS = [
     "Zone 1 Pillar Art Chest",
@@ -52,7 +55,23 @@ BONUS_PILLAR_ART_LOCATIONS = _numbered("Bonus Pillar Art Chest", 3)
 
 SECRET_BOSS_LOCATIONS = _numbered("Secret Boss", 6)
 
-EVENT_LOCATIONS = ["Chambre Finale"]
+NPC_LOCATIONS = ["Carnival", "Cob"]
+
+# All shop slots are reserved up front; regions.py only includes as many per shop as
+# shop_checks/shopsanity call for.
+SHOP_SLOT_LOCATIONS: Dict[str, List[str]] = {
+    shop: _numbered(f"{shop} Slot", MAX_SHOP_SLOTS_PER_SHOP) for shop in SHOP_NAMES
+}
+
+# Event-only locations always id=None, never enter the regular item pool. These exist so a
+# "boss defeated" flag can be tracked in logic independently of what random item its matching
+# checkable location above happens to hold.
+EVENT_LOCATIONS = [
+    "Chambre Finale",
+    "Dedan Defeated Event", "Japhet Defeated Event", "Enoch Defeated Event",
+    *[f"Zodiac Boss {i} Defeated Event" for i in range(1, 5)],
+    *[f"Secret Boss {i} Defeated Event" for i in range(1, 7)],
+]
 
 
 def _build_location_table() -> Dict[str, LocationData]:
@@ -76,9 +95,13 @@ def _build_location_table() -> Dict[str, LocationData]:
     add(ZONE_2_PURIFIED_BOOKS, LocationType.LIBRARY_BOOK)
     add(POSTAL_HINTS, LocationType.POSTAL_HINT)
     add(BOSS_LOCATIONS, LocationType.BOSS)
+    add(ZODIAC_BOSS_LOCATIONS, LocationType.BOSS)
     add(PILLAR_ART_LOCATIONS, LocationType.PILLAR_ART)
     add(BONUS_PILLAR_ART_LOCATIONS, LocationType.PILLAR_ART)
     add(SECRET_BOSS_LOCATIONS, LocationType.SECRET_BOSS)
+    add(NPC_LOCATIONS, LocationType.NPC)
+    for shop, slots in SHOP_SLOT_LOCATIONS.items():
+        add(slots, LocationType.SHOP)
 
     for name in EVENT_LOCATIONS:
         table[name] = LocationData(None, LocationType.EVENT)
