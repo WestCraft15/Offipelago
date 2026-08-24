@@ -1,50 +1,93 @@
-from .ExtraTypes import LocationData
+import typing
+from enum import Enum, auto
+from typing import Dict, List, Optional
 
-def fill_locations():
-    predefined_locations: dict[str, LocationData] = {
-        "Zone 0 - Outdoors - Left Chest":                LocationData(1000000, "Zone 0"),
-        "Zone 0 - Outdoors - Right Chest":               LocationData(1000001, "Zone 0"),
+from .constants import LOCATION_ID_START
 
-        "Zone 1 - Elsen - Promotion Elsen Chest":        LocationData(1000002, "Zone 1"),
-        "Zone 1 - Elsen - Alpha":                        LocationData(1000003, "Zone 1"),
-        "Zone 1 - Elsen - Hidden Chest":                 LocationData(1000004, "Zone 1"),
-        "Zone 1 - Mines Entrance - Pillar Art Chest":    LocationData(1000005, "Zone 1"),
-        "Zone 1 - Mines First Maze - Left Chest":        LocationData(1000006, "Zone 1"),
-        "Zone 1 - Mines First Maze - Right Chest":       LocationData(1000007, "Zone 1"),
-        "Zone 1 - Mines Safe Room - Chest":              LocationData(1000008, "Zone 1"),
-        "Zone 1 - Mines Orb Room - Virgo-Orb Chest":     LocationData(1000009, "Zone 1"),
-        "Zone 1 - Mines Orb Room - Scorpio-Orb Chest":   LocationData(1000010, "Zone 1"),
-        "Zone 1 - Mines Orb Room - Capricorn-Orb Chest": LocationData(1000011, "Zone 1"),
-        "Zone 1 - Mines Orb Room - Libra-Orb Chest":     LocationData(1000012, "Zone 1"),
-        "Zone 1 - Mines Orb Room - Gemini-Orb Chest":    LocationData(1000013, "Zone 1"),
-        "Zone 1 - Mines Orb Room - Taurus-Orb Chest":    LocationData(1000014, "Zone 1"),
-        "Zone 1 - Mines Dark Maze - First Chest":        LocationData(1000015, "Zone 1"),
-        "Zone 1 - Mines Dark Maze - Top Chest":          LocationData(1000016, "Zone 1"),
-        "Zone 1 - Mines Dark Maze - Right Chest":        LocationData(1000017, "Zone 1"),
-        "Zone 1 - Mines Shop 1":                         LocationData(1000018, "Zone 1"),
-        "Zone 1 - Mines Shop 2":                         LocationData(1000019, "Zone 1"),
-        "Zone 1 - Mines Shop 3":                         LocationData(1000020, "Zone 1"),
-        "Zone 1 - Mines Shop 4":                         LocationData(1000021, "Zone 1"),
-        "Zone 1 - Floor 2584 - Left Chest":              LocationData(1000022, "Zone 1"),
-        "Zone 1 - Floor 2584 - Right Chest":             LocationData(1000023, "Zone 1"),
-        "Zone 1 - Floor 10258 - Chest":                  LocationData(1000024, "Zone 1"),
-        "Zone 1 - Floor 10258 Area 3/4 - Chest":         LocationData(1000025, "Zone 1"),
-        "Zone 1 - Alma First Room - Shop 1":             LocationData(1000026, "Zone 1"),
-        "Zone 1 - Alma First Room - Shop 2":             LocationData(1000027, "Zone 1"),
-        "Zone 1 - Alma First Room - Shop 3":             LocationData(1000028, "Zone 1"),
-        "Zone 1 - Alma First Room - Shop 4":             LocationData(1000029, "Zone 1"),
-        "Zone 1 - Alma Bottom Right Room - Chest":       LocationData(1000030, "Zone 1"),
-        "Zone 1 - Alma Before Dedan - Chest":            LocationData(1000031, "Zone 1"),
 
-        "Zone 2 - Library Second Floor - Chest":         LocationData(1000032, "Zone 2"),
-        "Zone 2 - Library Third Floor - Left Chest":     LocationData(1000033, "Zone 2"),
-        "Zone 2 - Library Third Floor - Right Chest":    LocationData(1000034, "Zone 2"),
-        "Zone 2 - Library Second Floor - Chest":         LocationData(1000035, "Zone 2"),
-        "Zone 2 - Library Second Floor - Chest":         LocationData(1000036, "Zone 2"),
-        "Zone 2 - Library Second Floor - Chest":         LocationData(1000037, "Zone 2"),
-    }
+class LocationType(Enum):
+    CHEST = auto()
+    LIBRARY_BOOK = auto()
+    POSTAL_HINT = auto()
+    BOSS = auto()
+    PILLAR_ART = auto()
+    SECRET_BOSS = auto()
+    EVENT = auto()
 
-    print(predefined_locations)
-    return predefined_locations
 
-location_table = fill_locations()
+class LocationData(typing.NamedTuple):
+    id: Optional[int]
+    type: LocationType
+
+
+def _numbered(prefix: str, count: int) -> List[str]:
+    return [f"{prefix} {i}" for i in range(1, count + 1)]
+
+
+ZONE_0_CHESTS = _numbered("Zone 0 Chest", 2)
+ZONE_1_CHESTS = _numbered("Zone 1 Chest", 19)
+ZONE_2_CHESTS = _numbered("Zone 2 Chest", 23)
+ZONE_2_PURIFIED_CHESTS = _numbered("Zone 2 Purified Chest", 7)
+ZONE_3_CHESTS = _numbered("Zone 3 Chest", 13)
+ZONE_3_PURIFIED_CHESTS = _numbered("Zone 3 Purified Chest", 10)
+CHAMBRE_CHESTS = _numbered("Chambre Chest", 5)
+
+ZONE_3_AREA_4_CHESTS = ZONE_3_CHESTS[-4:]
+
+ZONE_2_BOOKS = _numbered("Zone 2 Library Book", 8)
+ZONE_2_PURIFIED_BOOKS = _numbered("Zone 2 Purified Library Book", 8)
+
+POSTAL_HINTS = _numbered("Postal Hint", 6)
+
+BOSS_LOCATIONS = ["Zone 1 Boss - Dedan", "Zone 2 Boss - Japhet", "Zone 3 Boss - Enoch"]
+
+PILLAR_ART_LOCATIONS = [
+    "Zone 1 Pillar Art Chest",
+    "Zone 2 Pillar Art Chest",
+    "Zone 3 Pillar Art Chest",
+    "The Room Pillar Art Chest",
+    "Purified Zone Pillar Art Chest",
+]
+BONUS_PILLAR_ART_LOCATIONS = _numbered("Bonus Pillar Art Chest", 3)
+
+SECRET_BOSS_LOCATIONS = _numbered("Secret Boss", 6)
+
+EVENT_LOCATIONS = ["Chambre Finale"]
+
+
+def _build_location_table() -> Dict[str, LocationData]:
+    table: Dict[str, LocationData] = {}
+    code = LOCATION_ID_START
+
+    def add(names: List[str], ltype: LocationType) -> None:
+        nonlocal code
+        for n in names:
+            table[n] = LocationData(code, ltype)
+            code += 1
+
+    add(ZONE_0_CHESTS, LocationType.CHEST)
+    add(ZONE_1_CHESTS, LocationType.CHEST)
+    add(ZONE_2_CHESTS, LocationType.CHEST)
+    add(ZONE_2_PURIFIED_CHESTS, LocationType.CHEST)
+    add(ZONE_3_CHESTS, LocationType.CHEST)
+    add(ZONE_3_PURIFIED_CHESTS, LocationType.CHEST)
+    add(CHAMBRE_CHESTS, LocationType.CHEST)
+    add(ZONE_2_BOOKS, LocationType.LIBRARY_BOOK)
+    add(ZONE_2_PURIFIED_BOOKS, LocationType.LIBRARY_BOOK)
+    add(POSTAL_HINTS, LocationType.POSTAL_HINT)
+    add(BOSS_LOCATIONS, LocationType.BOSS)
+    add(PILLAR_ART_LOCATIONS, LocationType.PILLAR_ART)
+    add(BONUS_PILLAR_ART_LOCATIONS, LocationType.PILLAR_ART)
+    add(SECRET_BOSS_LOCATIONS, LocationType.SECRET_BOSS)
+
+    for name in EVENT_LOCATIONS:
+        table[name] = LocationData(None, LocationType.EVENT)
+
+    return table
+
+
+location_table: Dict[str, LocationData] = _build_location_table()
+
+location_name_to_id: Dict[str, int] = {
+    name: data.id for name, data in location_table.items() if data.id is not None
+}
