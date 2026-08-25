@@ -27,8 +27,6 @@ namespace Offipelago
 			var actor = GetAnyActor(eventID);
 			actor.states[0].commands[textCmd] = CreateText("A check has been found.");
 			actor.states[0].commands[inventoryCommand] = new FPGCmdSendCheck(location_id);
-
-			MelonLogger.Msg($"Created Check: {location_id} ({((FPGCmdSendCheck)actor.states[0].commands[inventoryCommand]).location_id})");
 		}
 
 		private static FPGCmdShowTextUntranslated CreateText(string text, FPGCmdShowText? old = null)

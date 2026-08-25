@@ -4,15 +4,18 @@ using MelonLoader;
 using OFFGame.Battle;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace Offipelago
 {
 	public class OffExplorer : MonoBehaviour
 	{
-		int current_actor = 1;
+		int current_actor = 0;
+
 		readonly InputAction next_room_action = new(binding: "/Keyboard/p");
 		readonly InputAction prev_room_action = new(binding: "/Keyboard/o");
 		readonly InputAction toggle_alpha_action = new(binding: "/Keyboard/1");
@@ -25,7 +28,25 @@ namespace Offipelago
 
 		public static OffExplorer instance;
 
-		public bool[] addons = [false, false, false];
+		private GameObject uiPanel;
+		private TextMeshProUGUI text;
+
+		struct Message(string message)
+		{
+			public string message = message;
+			public double time = 3;
+		}
+
+		private static readonly List<Message> messages = [];
+
+		public static void AddMessage(string message)
+		{
+			messages.Add(new(message));
+			if (messages.Count() > 14)
+			{
+				messages.RemoveAt(0);
+			}
+		}
 
 		void Start()
 		{
@@ -46,34 +67,63 @@ namespace Offipelago
 
 		void Update()
 		{
+			if (FPGOverworldMode.instance is null)
+				return;
+
+			if (uiPanel is null || text.IsDestroyed())
+			{
+				MelonLogger.Msg("Creating Exporer Panel");
+				uiPanel = Instantiate(FPGOverworldMode.instance.GetComponentInChildren<FPGHintPanel>(true).gameObject);
+				uiPanel.name = "ExplorerPanel";
+				uiPanel.GetComponent<FPGHintPanel>().enabled = false;
+				uiPanel.GetComponent<VerticalLayoutGroup>().enabled = false;
+				uiPanel.transform.SetParent(FPGOverworldMode.instance.transform.Find("UI"), false);
+				text = uiPanel.GetComponentInChildren<TextMeshProUGUI>();
+				text.font = FPGAppMaster.instance.romanFontWithShadow;
+				text.fontSize = 32f;
+				text.margin = Vector4.zero;
+			}
+
 			if (next_room_action.WasPressedThisFrame())
 			{
-				MelonLogger.Msg("Loading next scene");
+				AddMessage("Loading next scene");
 				FPGOverworldMode.instance.PrepareMapTravel(SceneManager.GetSceneByBuildIndex(SceneManager.GetSceneByName(FPGOverworldMode.instance.gameState.map).buildIndex + 1).name, new Vector2Int(0, 0), GridDirection.North);
 			}
 
 			if (prev_room_action.WasPressedThisFrame())
 			{
-				MelonLogger.Msg($"Loading previous scene");
+				AddMessage($"Loading previous scene");
 				FPGOverworldMode.instance.PrepareMapTravel(SceneManager.GetSceneByBuildIndex(SceneManager.GetSceneByName(FPGOverworldMode.instance.gameState.map).buildIndex - 1).name, new Vector2Int(0, 0), GridDirection.North);
 			}
 
 			if (toggle_alpha_action.WasPressedThisFrame())
 			{
-				MelonLogger.Msg(addons[0] ? $"Alpha disabled" : "Alpha enabled");
-				addons[0] = !addons[0];
+				var enabled = FPGOverworldMode.instance.gameState.GetActivePartyMembers().Any((m) => m.characterID == 2);
+				if (enabled)
+					FPGOverworldMode.instance.RemoveFromParty(2);
+				else
+					FPGOverworldMode.instance.AddToParty(2);
+				AddMessage(enabled ? $"Alpha disabled" : "Alpha enabled");
 			}
 
 			if (toggle_omega_action.WasPressedThisFrame())
 			{
-				MelonLogger.Msg(addons[1] ? $"Omega disabled" : "Omega enabled");
-				addons[1] = !addons[1];
+				var enabled = FPGOverworldMode.instance.gameState.GetActivePartyMembers().Any((m) => m.characterID == 3);
+				if (enabled)
+					FPGOverworldMode.instance.RemoveFromParty(3);
+				else
+					FPGOverworldMode.instance.AddToParty(3);
+				AddMessage(enabled ? $"Omega disabled" : "Omega enabled");
 			}
 
 			if (toggle_epsilon_action.WasPressedThisFrame())
 			{
-				MelonLogger.Msg(addons[2] ? $"Epsilon disabled" : "Epsilon enabled");
-				addons[2] = !addons[2];
+				var enabled = FPGOverworldMode.instance.gameState.GetActivePartyMembers().Any((m) => m.characterID == 4);
+				if (enabled)
+					FPGOverworldMode.instance.RemoveFromParty(4);
+				else
+					FPGOverworldMode.instance.AddToParty(4);
+				AddMessage(enabled ? $"Epsilon disabled" : "Epsilon enabled");
 			}
 
 			if (up_action.WasPressedThisFrame())
@@ -81,9 +131,9 @@ namespace Offipelago
 				current_actor++;
 				var actor = GetActor(current_actor);
 				if (actor is null)
-					MelonLogger.Warning($"No actor with id {current_actor}");
+					AddMessage($"No actor with id {current_actor}");
 				else
-					MelonLogger.Msg($"Selected actor {actor.name} ({current_actor})");
+					AddMessage($"Selected actor {actor.name} ({current_actor})");
 			}
 
 			if (down_action.WasPressedThisFrame())
@@ -91,9 +141,9 @@ namespace Offipelago
 				current_actor--;
 				var actor = GetActor(current_actor);
 				if (actor is null)
-					MelonLogger.Warning($"No actor with id {current_actor}");
+					AddMessage($"No actor with id {current_actor}");
 				else
-					MelonLogger.Msg($"Selected actor {actor.name} ({current_actor})");
+					AddMessage($"Selected actor {actor.name} ({current_actor})");
 			}
 
 			if (accept_action.WasPressedThisFrame())
@@ -116,18 +166,44 @@ namespace Offipelago
 						states += $"{Indent(indent - subIndent)}      {j}: {desc}\n";
 					}
 				}
-				MelonLogger.Msg($"\nActor info for {actor.name} ({current_actor}):\n  States:\n{states}");
+				MelonLogger.Msg($"\nActor info for {actor.name} ({current_actor}):\n  Position: {actor.GetTruePosition()}\n  States:\n{states}");
+				AddMessage($"Actor info for {actor.name} ({current_actor}) printed to console");
 			}
 
 			if (list_action.WasPressedThisFrame())
 			{
-				NewRoom();
+				ScanRoom();
+			}
+
+			if (text is not null)
+			{
+				uiPanel.SetActive(true);
+
+				for (var i = 0; i < messages.Count(); i++)
+				{
+					Message m = messages[i];
+					m.time -= Time.deltaTime;
+					messages[i] = m;
+				}
+
+				messages.RemoveAll(m => m.time <= 0);
+				text.text = messages.Join((m) => m.message, "\n");
 			}
 		}
 
 		public void NewRoom()
 		{
+			ScanRoom();
+			current_actor = 0;
+		}
+
+		public void ScanRoom()
+		{
+			AddMessage($"Important actors for room {FPGOverworldMode.instance.GetCurrentMapComponent().GetMapName()[..3]} printed to console");
+
 			var actors = (FPGOverworldMode.instance.GetCurrentMapComponent()?.GetLogicActors()) ?? [];
+
+			MelonLogger.Msg($"Important actors for room {FPGOverworldMode.instance.GetCurrentMapComponent().GetMapName()[..3]}:");
 
 			foreach (var actor in actors)
 			{
@@ -139,12 +215,12 @@ namespace Offipelago
 					{
 						if (!hasText && actor.states[i].commands[j].GetType().Name.Contains("Text"))
 						{
-							MelonLogger.Msg($"Actor {actor.name} ({actor.eventID}) contains text!");
+							MelonLogger.Msg($"Actor {actor.name} ({actor.eventID}) contains text");
 							hasText = true;
 						}
 						if (!isChest && actor.states[i].commands[j].GetType() == typeof(FPGCmdChangeInventory))
 						{
-							MelonLogger.Msg($"Actor {actor.name} ({actor.eventID}) is likely a chest!");
+							MelonLogger.Msg($"Actor {actor.name} ({actor.eventID}) is possibly a check");
 							isChest = true;
 						}
 					}
@@ -254,9 +330,9 @@ namespace Offipelago
 		{
 			static void Prefix(ref BATEncounter encounter)
 			{
-				encounter.alpha.active = instance.addons[0];
-				encounter.omega.active = instance.addons[1];
-				encounter.epsilon.active = instance.addons[2];
+				//encounter.alpha.active = instance.addons[0];
+				//encounter.omega.active = instance.addons[1];
+				//encounter.epsilon.active = instance.addons[2];
 			}
 		}
 	}
