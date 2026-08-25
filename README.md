@@ -2,14 +2,40 @@
 Archipelago for OFF (2025)
 
 ## Requirements
-OFF (Steam)
+- OFF (Steam)
+- Visual Studio 2022
 
-Visual Studio 2022
-
-## How to develop the mod
-- Install MelonLoader to OFF
+## Installation
+- Install MelonLoader on your copy of OFF
 - Build the mod
 - Place Offipelago.dll and Archipelago.MultiClient.Net.dll in the Mods folder
-- Use the I/K keys to look through objects in a room (A message in the console should tell you which actors to look for)
-- Press L to show it's events
-- Add to the Patches.cs file (follow the template of the other patches)
+
+## OffExplorer
+A custom made event browser for OFF. Allows you to look through all actors in a room.
+
+### Controls
+- I: Select next event
+- K: Select previous event
+- J: Reprint important object list
+- L: Show code for selected event
+- P: Next room (currently broken)
+- O: Previous room (currently broken)
+- 1: Toggle Alpha in your party
+- 2: Toggle Omega in your party
+- 3: Toggle Epsilon in your party
+
+## Development
+The bulk of the mod is handled in the Patches.cs file. It contains a bunch of functions
+that are run when their respective room loads. To add a new room, simply create a new
+function called Post_###, where the ### is the room number to modify. Use the GetActor
+function to modify an event in the room. A few functions are provided to handle patches
+that are used often, such as chests.
+
+### Using OffExplorer for development
+In general, the process looks like this:
+- Enter the room you wish to modify
+- A message will appear in the console showing the room number and any important actors
+- Find actors using the I/K keys, and view their events with L
+- Create a patch for the room to modify the actor(s)
+
+### If you have any questions, ask WestCraft15 on Discord for help.

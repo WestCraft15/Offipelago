@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <Nullable>enable</Nullable>
-    <ErrorReport>prompt</ErrorReport>
     <Platforms>AnyCPU;x64</Platforms>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -43,27 +42,35 @@
     </Reference>
     <Reference Include="Unity.InputSystem">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\OFF\OFF_Data\Managed\Unity.InputSystem.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\OFF\OFF_Data\Managed\UnityEngine.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\OFF\OFF_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.GridModule">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\OFF\OFF_Data\Managed\UnityEngine.GridModule.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.InputForUIModule">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\OFF\OFF_Data\Managed\UnityEngine.InputForUIModule.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\OFF\OFF_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.InputModule">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\OFF\OFF_Data\Managed\UnityEngine.InputModule.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.TilemapModule">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\OFF\OFF_Data\Managed\UnityEngine.TilemapModule.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
 

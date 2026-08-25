@@ -3,7 +3,6 @@ using Archipelago.MultiClient.Net.Enums;
 using FangamerRPG;
 using HarmonyLib;
 using MelonLoader;
-using OFFGame.Battle;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -30,16 +29,6 @@ namespace Offipelago
 			session.ConnectAsync().Wait();
 
 			session.LoginAsync("Off", "West", ItemsHandlingFlags.AllItems).Wait();
-		}
-	}
-
-	[HarmonyPatch(typeof(BATMain), "LoadEncounter")]
-	public class LoadEncounter_Patch
-	{
-		static void Prefix(ref BATEncounter encounter)
-		{
-			//encounter.batter.active = false;
-			//encounter.judge.active = !encounter.boxxer.active;
 		}
 	}
 

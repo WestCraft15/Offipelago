@@ -1,5 +1,7 @@
 ﻿using FangamerRPG;
+using HarmonyLib;
 using MelonLoader;
+using OFFGame.Battle;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -13,6 +15,9 @@ namespace Offipelago
 		int current_actor = 1;
 		readonly InputAction next_room_action = new(binding: "/Keyboard/p");
 		readonly InputAction prev_room_action = new(binding: "/Keyboard/o");
+		readonly InputAction toggle_alpha_action = new(binding: "/Keyboard/1");
+		readonly InputAction toggle_omega_action = new(binding: "/Keyboard/2");
+		readonly InputAction toggle_epsilon_action = new(binding: "/Keyboard/3");
 		readonly InputAction up_action = new(binding: "/Keyboard/i");
 		readonly InputAction down_action = new(binding: "/Keyboard/k");
 		readonly InputAction accept_action = new(binding: "/Keyboard/l");
@@ -20,12 +25,17 @@ namespace Offipelago
 
 		public static OffExplorer instance;
 
+		public bool[] addons = [false, false, false];
+
 		void Start()
 		{
 			MelonLogger.Msg("Started OFF Explorer v1.0");
 
-			next_room_action.Enable();
-			prev_room_action.Enable();
+			//next_room_action.Enable();
+			//prev_room_action.Enable();
+			toggle_alpha_action.Enable();
+			toggle_omega_action.Enable();
+			toggle_epsilon_action.Enable();
 			up_action.Enable();
 			down_action.Enable();
 			accept_action.Enable();
@@ -46,6 +56,24 @@ namespace Offipelago
 			{
 				MelonLogger.Msg($"Loading previous scene");
 				FPGOverworldMode.instance.PrepareMapTravel(SceneManager.GetSceneByBuildIndex(SceneManager.GetSceneByName(FPGOverworldMode.instance.gameState.map).buildIndex - 1).name, new Vector2Int(0, 0), GridDirection.North);
+			}
+
+			if (toggle_alpha_action.WasPressedThisFrame())
+			{
+				MelonLogger.Msg(addons[0] ? $"Alpha disabled" : "Alpha enabled");
+				addons[0] = !addons[0];
+			}
+
+			if (toggle_omega_action.WasPressedThisFrame())
+			{
+				MelonLogger.Msg(addons[1] ? $"Omega disabled" : "Omega enabled");
+				addons[1] = !addons[1];
+			}
+
+			if (toggle_epsilon_action.WasPressedThisFrame())
+			{
+				MelonLogger.Msg(addons[2] ? $"Epsilon disabled" : "Epsilon enabled");
+				addons[2] = !addons[2];
 			}
 
 			if (up_action.WasPressedThisFrame())
@@ -218,6 +246,18 @@ namespace Offipelago
 				str += "  ";
 			}
 			return str;
+		}
+
+
+		[HarmonyPatch(typeof(BATMain), "LoadEncounter")]
+		public class LoadEncounter_Patch
+		{
+			static void Prefix(ref BATEncounter encounter)
+			{
+				encounter.alpha.active = instance.addons[0];
+				encounter.omega.active = instance.addons[1];
+				encounter.epsilon.active = instance.addons[2];
+			}
 		}
 	}
 }
