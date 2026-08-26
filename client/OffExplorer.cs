@@ -14,13 +14,17 @@ namespace Offipelago
 {
 	public class OffExplorer : MonoBehaviour
 	{
-		int current_actor = 0;
+		int current_actor = 1;
 
 		readonly InputAction next_room_action = new(binding: "/Keyboard/p");
 		readonly InputAction prev_room_action = new(binding: "/Keyboard/o");
 		readonly InputAction toggle_alpha_action = new(binding: "/Keyboard/1");
 		readonly InputAction toggle_omega_action = new(binding: "/Keyboard/2");
 		readonly InputAction toggle_epsilon_action = new(binding: "/Keyboard/3");
+		readonly InputAction level_alpha_action = new(binding: "/Keyboard/7");
+		readonly InputAction level_omega_action = new(binding: "/Keyboard/8");
+		readonly InputAction level_epsilon_action = new(binding: "/Keyboard/9");
+		readonly InputAction toggle_noclip_action = new(binding: "/Keyboard/n");
 		readonly InputAction up_action = new(binding: "/Keyboard/i");
 		readonly InputAction down_action = new(binding: "/Keyboard/k");
 		readonly InputAction accept_action = new(binding: "/Keyboard/l");
@@ -30,6 +34,8 @@ namespace Offipelago
 
 		private GameObject uiPanel;
 		private TextMeshProUGUI text;
+
+		public bool noclip = false;
 
 		struct Message(string message)
 		{
@@ -42,7 +48,7 @@ namespace Offipelago
 		public static void AddMessage(string message)
 		{
 			messages.Add(new(message));
-			if (messages.Count() > 14)
+			if (messages.Count() > 13)
 			{
 				messages.RemoveAt(0);
 			}
@@ -52,11 +58,15 @@ namespace Offipelago
 		{
 			MelonLogger.Msg("Started OFF Explorer v1.0");
 
-			//next_room_action.Enable();
-			//prev_room_action.Enable();
+			next_room_action.Enable();
+			prev_room_action.Enable();
 			toggle_alpha_action.Enable();
 			toggle_omega_action.Enable();
 			toggle_epsilon_action.Enable();
+			level_alpha_action.Enable();
+			level_omega_action.Enable();
+			level_epsilon_action.Enable();
+			toggle_noclip_action.Enable();
 			up_action.Enable();
 			down_action.Enable();
 			accept_action.Enable();
@@ -80,20 +90,26 @@ namespace Offipelago
 				uiPanel.transform.SetParent(FPGOverworldMode.instance.transform.Find("UI"), false);
 				text = uiPanel.GetComponentInChildren<TextMeshProUGUI>();
 				text.font = FPGAppMaster.instance.romanFontWithShadow;
-				text.fontSize = 32f;
+				text.fontSize = 16f;
 				text.margin = Vector4.zero;
+			}
+
+			if (toggle_noclip_action.WasPressedThisFrame())
+			{
+				AddMessage(noclip ? "Noclip deactivated" : "Noclip activated");
+				noclip = !noclip;
 			}
 
 			if (next_room_action.WasPressedThisFrame())
 			{
 				AddMessage("Loading next scene");
-				FPGOverworldMode.instance.PrepareMapTravel(SceneManager.GetSceneByBuildIndex(SceneManager.GetSceneByName(FPGOverworldMode.instance.gameState.map).buildIndex + 1).name, new Vector2Int(0, 0), GridDirection.North);
+				FPGOverworldMode.instance.PrepareMapTravel(System.IO.Path.GetFileNameWithoutExtension(SceneUtility.GetScenePathByBuildIndex(SceneManager.GetActiveScene().buildIndex + 1)), new Vector2Int(0, 0), GridDirection.North);
 			}
 
 			if (prev_room_action.WasPressedThisFrame())
 			{
 				AddMessage($"Loading previous scene");
-				FPGOverworldMode.instance.PrepareMapTravel(SceneManager.GetSceneByBuildIndex(SceneManager.GetSceneByName(FPGOverworldMode.instance.gameState.map).buildIndex - 1).name, new Vector2Int(0, 0), GridDirection.North);
+				FPGOverworldMode.instance.PrepareMapTravel(System.IO.Path.GetFileNameWithoutExtension(SceneUtility.GetScenePathByBuildIndex(SceneManager.GetActiveScene().buildIndex - 1)), new Vector2Int(0, 0), GridDirection.North);
 			}
 
 			if (toggle_alpha_action.WasPressedThisFrame())
@@ -126,34 +142,39 @@ namespace Offipelago
 				AddMessage(enabled ? $"Epsilon disabled" : "Epsilon enabled");
 			}
 
+			if (level_alpha_action.WasPressedThisFrame())
+			{
+				FPGOverworldMode.instance.gameState.partyMemberStates[3].LevelUp(1);
+				AddMessage("Alpha leveled up");
+			}
+
+			if (level_omega_action.WasPressedThisFrame())
+			{
+				FPGOverworldMode.instance.gameState.partyMemberStates[4].LevelUp(1);
+				AddMessage("Omega leveled up");
+			}
+
+			if (level_epsilon_action.WasPressedThisFrame())
+			{
+				FPGOverworldMode.instance.gameState.partyMemberStates[5].LevelUp(1);
+				AddMessage("Epsilon leveled up");
+			}
+
 			if (up_action.WasPressedThisFrame())
 			{
 				current_actor++;
-				var actor = GetActor(current_actor);
-				if (actor is null)
-					AddMessage($"No actor with id {current_actor}");
-				else
-					AddMessage($"Selected actor {actor.name} ({current_actor})");
 			}
 
 			if (down_action.WasPressedThisFrame())
 			{
 				current_actor--;
-				var actor = GetActor(current_actor);
-				if (actor is null)
-					AddMessage($"No actor with id {current_actor}");
-				else
-					AddMessage($"Selected actor {actor.name} ({current_actor})");
 			}
 
 			if (accept_action.WasPressedThisFrame())
 			{
 				var actor = GetActor(current_actor);
 				if (actor is null)
-				{
-					MelonLogger.Warning($"No actor with id {current_actor}");
 					return;
-				}
 				string states = "";
 				for (var i = 0; i < actor.states.Count; i++)
 				{
@@ -166,8 +187,8 @@ namespace Offipelago
 						states += $"{Indent(indent - subIndent)}      {j}: {desc}\n";
 					}
 				}
-				MelonLogger.Msg($"\nActor info for {actor.name} ({current_actor}):\n  Position: {actor.GetTruePosition()}\n  States:\n{states}");
-				AddMessage($"Actor info for {actor.name} ({current_actor}) printed to console");
+				MelonLogger.Msg($"\nInfo for actor {current_actor} ({actor.name}):\n  Position: {actor.GetTruePosition()}\n  States:\n{states}");
+				AddMessage($"Actor info printed to console");
 			}
 
 			if (list_action.WasPressedThisFrame())
@@ -187,14 +208,19 @@ namespace Offipelago
 				}
 
 				messages.RemoveAll(m => m.time <= 0);
-				text.text = messages.Join((m) => m.message, "\n");
+				var actor = GetActor(current_actor);
+				if (actor is null)
+					text.text = $"No actor with id {current_actor}\n";
+				else
+					text.text = $"Selected actor: {current_actor} ({actor.name})\n";
+				text.text += messages.Join((m) => m.message, "\n");
 			}
 		}
 
 		public void NewRoom()
 		{
 			ScanRoom();
-			current_actor = 0;
+			current_actor = 1;
 		}
 
 		public void ScanRoom()
@@ -215,12 +241,12 @@ namespace Offipelago
 					{
 						if (!hasText && actor.states[i].commands[j].GetType().Name.Contains("Text"))
 						{
-							MelonLogger.Msg($"Actor {actor.name} ({actor.eventID}) contains text");
+							MelonLogger.Msg($"Actor {actor.eventID} ({actor.name}) contains text");
 							hasText = true;
 						}
 						if (!isChest && actor.states[i].commands[j].GetType() == typeof(FPGCmdChangeInventory))
 						{
-							MelonLogger.Msg($"Actor {actor.name} ({actor.eventID}) is possibly a check");
+							MelonLogger.Msg($"Actor {actor.eventID} ({actor.name}) is possibly a check");
 							isChest = true;
 						}
 					}
@@ -333,6 +359,20 @@ namespace Offipelago
 				//encounter.alpha.active = instance.addons[0];
 				//encounter.omega.active = instance.addons[1];
 				//encounter.epsilon.active = instance.addons[2];
+			}
+		}
+
+
+		[HarmonyPatch(typeof(FPGLogicActor), "ValidateMove")]
+		public class NoClipPatch
+		{
+			static void Postfix(ref FPGLogicActor __instance, ref GridMoveInfo __result)
+			{
+				if (__instance is FPGOverworldPawn && instance.noclip)
+				{
+					__result.actorMoveValid = true;
+					__result.boatMoveValid = true;
+				}
 			}
 		}
 	}

@@ -18,11 +18,15 @@ A custom made event browser for OFF. Allows you to look through all actors in a 
 - K: Select previous event
 - J: Reprint important object list
 - L: Show code for selected event
-- P: Next room (currently broken)
-- O: Previous room (currently broken)
+- P: Next room
+- O: Previous room
+- N: Toggle noclip
 - 1: Toggle Alpha in your party
 - 2: Toggle Omega in your party
 - 3: Toggle Epsilon in your party
+- 7: Level up Alpha (May not always work)
+- 8: Level up Omega (May not always work)
+- 9: Level up Epsilon (May not always work)
 
 ## Development
 The bulk of the mod is handled in the Patches.cs file. It contains a bunch of functions

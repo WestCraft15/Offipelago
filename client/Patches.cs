@@ -111,6 +111,80 @@ namespace Offipelago
 		{
 			PatchChest(129, 1000033);
 		}
+
+		public static void Post_121()
+		{
+			PatchChest(1, 1000034);
+			PatchChest(2, 1000035);
+		}
+
+		public static void Post_122()
+		{
+			PatchChest(1, 1000041);
+		}
+
+		public static void Post_124()
+		{
+			PatchChest(2, 1000036);
+			PatchChest(3, 1000037);
+			PatchChest(4, 1000038);
+		}
+
+		public static void Post_125()
+		{
+			PatchChest(1, 1000039);
+			PatchChest(4, 1000040);
+		}
+
+		public static void Post_134()
+		{
+			PatchChest(5, 1000042, 3, 0);
+		}
+
+		public static void Post_139()
+		{
+			PatchChest(3, 1000049);
+			PatchChest(4, 1000050);
+			PatchChest(5, 1000051);
+			PatchChest(6, 1000052);
+			PatchChest(7, 1000053);
+			PatchChest(8, 1000054);
+		}
+
+		public static void Post_140()
+		{
+			PatchChest(2, 1000044, 3, 1);
+			PatchChest(3, 1000045, 3, 1);
+			PatchChest(4, 1000046, 3, 1);
+			PatchChest(5, 1000047, 3, 1);
+			PatchChest(69, 1000048, 3, 1);
+		}
+
+		public static void Post_144()
+		{
+			PatchChest(13, 1000043, 3, 1);
+			GetActor(14).states[1].commands[49] = CreateText("...\\!The grand prize was a \ncheck?");
+		}
+
+		public static void Post_210()
+		{
+			PatchChest(6, 1000055);
+		}
+
+		public static void Post_217()
+		{
+			PatchChest(3, 1000056, 10, 9);
+		}
+
+		public static void Post_221()
+		{
+			PatchChest(15, 1000057);
+		}
+
+		public static void Post_222()
+		{
+			PatchChest(3, 1000058);
+		}
 	}
 
 	internal class FPGCmdShowTextUntranslated : FPGCmdShowText
