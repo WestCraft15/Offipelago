@@ -8,22 +8,24 @@ from .constants import ITEM_ID_START, NUM_PROGRESSIVE_ZONE_STEPS
 
 
 class ItemType(Enum):
-    KEY = auto()               # Zone cards / plot keys (individual, non-progressive mode)
-    PROGRESSIVE_ZONE = auto()  # "Progressive Zone" (progressive_zones mode)
-    PURIFIED_KEY = auto()      # Unlocks for purified Zone 2 / Zone 3 (zones_are_unlocks)
+    KEY = auto()               # Zone cards
+    PROGRESSIVE_ZONE = auto()  # Progressive zone items
+    PURIFIED_KEY = auto()      # Unlocks for purified zones
     GRAND = auto()             # The 5 "Grand" objects for Zacharie's Secret Boss sidequest
     LIBRARY = auto()           # Books borrowed from the Zone 2 Library
     MISC = auto()              # Other unique key-item-flavored collectibles
+    ADD_ON = auto()            # Alpha/Omega/Epsilon party-member recruitment
+    COMPETENCE = auto()        # Batter/Add-On special attacks 
     WEAPON = auto()
     SHIELD = auto()
     BODY = auto()
     HEAD = auto()
     ACCESSORY = auto()
-    PROGRESSIVE_EQUIP = auto()  # Progressive equipment items (progressive_equipment mode)
-    SPECIAL = auto()           # Combat consumables (Inspiration/Expiration)
+    PROGRESSIVE_EQUIP = auto()
+    SPECIAL = auto()
     MEDICINE = auto()
-    SEED = auto()               # Stat-boosting orbs
-    MACGUFFIN = auto()          # macguffin_hunt goal item
+    SEED = auto()
+    MACGUFFIN = auto()
     FILLER = auto()
     EVENT = auto()
 
@@ -41,7 +43,6 @@ _individual_zone_cards: List[str] = [
 _key_items: List[typing.Tuple[str, ItemClassification]] = [
     ("Aries-card", ItemClassification.progression),         # Allows access to the secret place
     ("Access Card", ItemClassification.progression),        # Permits access to Area 4 of Zone 3
-    ("Necktie", ItemClassification.progression_deprioritized),
     ("Music Box", ItemClassification.useful),
     ("Calendar Page", ItemClassification.useful),
     ("Stamped Note", ItemClassification.useful),
@@ -72,7 +73,42 @@ _misc_items: List[str] = [
     "Eye",
 ]
 
-# I split the equipment by category so each can be tracked for progressive :p
+# Add on names
+ADD_ON_NAMES: List[str] = ["Alpha", "Omega", "Epsilon"]
+
+#region Competences
+BATTER_COMPETENCES: List[str] = [
+    "Wide Angle", "Save First Base", "Run with Courage", "Furious Homerun",
+    "Save Second Base", "Run with Grace", "Special Homerun", "Save Third Base",
+    "Run with Dementia", "Magic Homerun", "Save Fourth Base", "Run with Belief",
+    "Save Secret Base",
+]
+
+ADD_ON_COMPETENCES: Dict[str, List[str]] = {
+    "Alpha": [
+        "Saturated Chain", "Awaited Embrace", "Converted Chain", "Requisite Embrace",
+        "Long Chain", "Open Embrace",
+        # TODO
+    ],
+    "Omega": [
+        "Inverse Perspective", "Overdone Perspective", "Optimised Blur", "Photographic Blur",
+        # TODO
+    ],
+    "Epsilon": [
+        # TODO
+    ],
+}
+
+COMPETENCE_ITEM_NAMES: Dict[str, List[str]] = {
+    owner: [f"{owner}: {name}" for name in names]
+    for owner, names in {"Batter": BATTER_COMPETENCES, **ADD_ON_COMPETENCES}.items()
+}
+ALL_COMPETENCE_ITEMS: List[str] = [
+    name for names in COMPETENCE_ITEM_NAMES.values() for name in names
+]
+#endregion
+
+#region Equipement
 _batter_weapons: List[str] = [
     "Harold Bat", "Masashi Bat", "Emmanuel Bat", "Michael Bat",
     "Yoshihiro Bat", "Lewis Bat", "Katsuhiro Bat", "Ashley Bat",
@@ -107,7 +143,7 @@ FLAT_EQUIPMENT_GROUPS: Dict[ItemType, List[str]] = {
     ItemType.ACCESSORY: _accessories,
 }
 
-# Number of progressive stuff
+# Progressive-mode items: name -> number of copies placed in the pool (one per equipment tier).
 PROGRESSIVE_EQUIPMENT_COUNTS: Dict[str, int] = {
     "Progressive Batter Weapon": len(_batter_weapons),
     "Progressive Add-On Weapon": len(_addon_weapons),
@@ -117,6 +153,7 @@ PROGRESSIVE_EQUIPMENT_COUNTS: Dict[str, int] = {
     "Progressive Head": len(_heads),
     "Progressive Accessory": len(_accessories),
 }
+#endregion
 
 _specials: List[str] = ["Inspiration", "Expiration"]
 
@@ -124,16 +161,31 @@ _medicine: List[str] = [
     "Luck ticket", "Fortune ticket", "Silver flesh", "Golden flesh",
     "Joker", "Moloch's meat", "Belial's meat", "Abaddon's meat",
 ]
+MEDICINE_ITEM_NAMES: List[str] = _medicine
 
 _seeds: List[str] = [
     "Taurus-orb", "Libra-orb", "Scorpio-orb", "Gemini-orb", "Capricorn-orb", "Virgo-orb",
 ]
 
-PURIFIED_KEY_ITEMS: List[str] = ["Zone 2 Purified Key", "Zone 3 Purified Key"]
+PURIFIED_KEY_ITEMS: List[str] = ["Zone 1 Purified Key", "Zone 2 Purified Key", "Zone 3 Purified Key"]
 
 PROGRESSIVE_ZONE_ITEM = "Progressive Zone"
 
 MACGUFFIN_ITEM = "MacGuffin"
+
+# weights for combat power
+POWER_WEIGHTS: Dict[ItemType, float] = {
+    ItemType.WEAPON: 1.0,
+    ItemType.SHIELD: 1.0,
+    ItemType.BODY: 1.0,
+    ItemType.HEAD: 1.0,
+    ItemType.ACCESSORY: 0.5,
+    ItemType.PROGRESSIVE_EQUIP: 1.0,
+    ItemType.ADD_ON: 3.0,
+    ItemType.COMPETENCE: 1.5,
+    ItemType.GRAND: 2.0,
+    ItemType.SEED: 1.0,
+}
 
 
 def _build_item_table() -> Dict[str, ItemData]:
@@ -147,7 +199,7 @@ def _build_item_table() -> Dict[str, ItemData]:
             code += 1
 
     # Both zone-card representations are reserved; only one set is actually placed in the
-    # pool for a given seed, chosen in world.create_items() based on progressive_zones.
+    # pool for a given seed, chosen in world.create_items() based on progressive_zones
     add(_individual_zone_cards, ItemType.KEY, ItemClassification.progression)
     table[PROGRESSIVE_ZONE_ITEM] = ItemData(code, ItemType.PROGRESSIVE_ZONE, ItemClassification.progression)
     code += 1
@@ -161,14 +213,20 @@ def _build_item_table() -> Dict[str, ItemData]:
     add(_library_items, ItemType.LIBRARY, ItemClassification.useful)
     add(_misc_items, ItemType.MISC, ItemClassification.useful)
 
-    # Flat equipment (used when progressive_equipment is off).
+    # Add-Ons are progression
+    add(ADD_ON_NAMES, ItemType.ADD_ON, ItemClassification.progression)
+
+    # Competences are reserved unconditionally
+    add(ALL_COMPETENCE_ITEMS, ItemType.COMPETENCE, ItemClassification.useful)
+
+    # Flat equipment (used when progressive_equipment is off)
     add(FLAT_EQUIPMENT_GROUPS[ItemType.WEAPON], ItemType.WEAPON, ItemClassification.useful)
     add(FLAT_EQUIPMENT_GROUPS[ItemType.SHIELD], ItemType.SHIELD, ItemClassification.useful)
     add(FLAT_EQUIPMENT_GROUPS[ItemType.BODY], ItemType.BODY, ItemClassification.useful)
     add(FLAT_EQUIPMENT_GROUPS[ItemType.HEAD], ItemType.HEAD, ItemClassification.useful)
     add(FLAT_EQUIPMENT_GROUPS[ItemType.ACCESSORY], ItemType.ACCESSORY, ItemClassification.useful)
 
-    # Progressive equipment (used when progressive_equipment is on)
+    # Progressive equipment (used when progressive_equipment is on).
     for name in PROGRESSIVE_EQUIPMENT_COUNTS:
         table[name] = ItemData(code, ItemType.PROGRESSIVE_EQUIP, ItemClassification.useful)
         code += 1
@@ -181,7 +239,8 @@ def _build_item_table() -> Dict[str, ItemData]:
     table[MACGUFFIN_ITEM] = ItemData(code, ItemType.MACGUFFIN, ItemClassification.progression)
     code += 1
 
-    # remainder of the item pool once every unique item above has been placed once.
+    # Generic padding item representing money found in the world; used to fill out the
+    # remainder of the item pool once everything else has been placed.
     table["Cash"] = ItemData(code, ItemType.FILLER, ItemClassification.filler)
     code += 1
 
@@ -190,20 +249,18 @@ def _build_item_table() -> Dict[str, ItemData]:
 
 item_table: Dict[str, ItemData] = _build_item_table()
 
-# Locked event items for logic completion stuff
 event_item_table: Dict[str, ItemData] = {
     "Victory": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
     "Dedan Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
     "Japhet Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
     "Enoch Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
-    **{
-        f"Zodiac {i} Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True)
-        for i in range(1, 5)
-    },
-    **{
-        f"Secret Boss {i} Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True)
-        for i in range(1, 7)
-    },
+    "Source Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
+    "Maldicion Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
+    "Psalmanazar & Herodotus Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
+    "Justus Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
+    "Carnival Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
+    "Cob Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
+    "Sugar Defeated": ItemData(None, ItemType.EVENT, ItemClassification.progression, True),
 }
 
-filler_item_names: List[str] = ["Cash"]
+filler_item_names: List[str] = ["Cash", *MEDICINE_ITEM_NAMES]

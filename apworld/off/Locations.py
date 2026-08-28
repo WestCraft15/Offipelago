@@ -2,7 +2,7 @@ import typing
 from enum import Enum, auto
 from typing import Dict, List, Optional
 
-from .constants import LOCATION_ID_START, MAX_SHOP_SLOTS_PER_SHOP, SHOP_NAMES
+from .constants import LOCATION_ID_START, MAX_SHOP_SLOTS_PER_SHOP, SHOP_NAMES, ZODIAC_BOSS_NAMES
 
 
 class LocationType(Enum):
@@ -13,7 +13,7 @@ class LocationType(Enum):
     PILLAR_ART = auto()
     SECRET_BOSS = auto()
     SHOP = auto()
-    NPC = auto()
+    ADD_ON = auto()
     EVENT = auto()
 
 
@@ -26,6 +26,7 @@ def _numbered(prefix: str, count: int) -> List[str]:
     return [f"{prefix} {i}" for i in range(1, count + 1)]
 
 
+# Amount of chests
 ZONE_0_CHESTS = _numbered("Zone 0 Chest", 2)
 ZONE_1_CHESTS = _numbered("Zone 1 Chest", 19)
 ZONE_2_CHESTS = _numbered("Zone 2 Chest", 23)
@@ -34,6 +35,7 @@ ZONE_3_CHESTS = _numbered("Zone 3 Chest", 13)
 ZONE_3_PURIFIED_CHESTS = _numbered("Zone 3 Purified Chest", 10)
 CHAMBRE_CHESTS = _numbered("Chambre Chest", 5)
 
+# The last 4 Zone 3 chests represent "Area 4", gated behind the Access Card in rules.py
 ZONE_3_AREA_4_CHESTS = ZONE_3_CHESTS[-4:]
 
 ZONE_2_BOOKS = _numbered("Zone 2 Library Book", 8)
@@ -41,36 +43,44 @@ ZONE_2_PURIFIED_BOOKS = _numbered("Zone 2 Purified Library Book", 8)
 
 POSTAL_HINTS = _numbered("Postal Hint", 6)
 
+# Bosses Locations
 BOSS_LOCATIONS = ["Zone 1 Boss - Dedan", "Zone 2 Boss - Japhet", "Zone 3 Boss - Enoch"]
-ZODIAC_BOSS_LOCATIONS = _numbered("Zodiac Boss", 4)
 
+# Zodiac Bosses Locations
+ZODIAC_BOSS_LOCATIONS = [f"Zodiac Boss - {name}" for name in ZODIAC_BOSS_NAMES]
+
+# Secret Bosses Locations(not sure if sugar is the only one)
+SECRET_BOSS_LOCATIONS = ["Sugar"]
+
+# Locations for the 3 onion rings
+ADD_ON_LOCATIONS = ["Alpha Recruited", "Omega Recruited", "Epsilon Recruited"]
+
+# Pillar Art locations
 PILLAR_ART_LOCATIONS = [
     "Zone 1 Pillar Art Chest",
     "Zone 2 Pillar Art Chest",
     "Zone 3 Pillar Art Chest",
     "The Room Pillar Art Chest",
     "Purified Zone Pillar Art Chest",
+    "Bonus Pillar Art Chest 1",
+    "Bonus Pillar Art Chest 2",
+    "Bonus Pillar Art Chest 3",
 ]
-BONUS_PILLAR_ART_LOCATIONS = _numbered("Bonus Pillar Art Chest", 3)
 
-SECRET_BOSS_LOCATIONS = _numbered("Secret Boss", 6)
+# A location for the secret ending
+SECRET_ENDING_LOCATION = "Secret Ending Reward"
 
-NPC_LOCATIONS = ["Carnival", "Cob"]
-
-# All shop slots are reserved up front; regions.py only includes as many per shop as
-# shop_checks/shopsanity call for.
+# For Shops
 SHOP_SLOT_LOCATIONS: Dict[str, List[str]] = {
     shop: _numbered(f"{shop} Slot", MAX_SHOP_SLOTS_PER_SHOP) for shop in SHOP_NAMES
 }
 
-# Event-only locations always id=None, never enter the regular item pool. These exist so a
-# "boss defeated" flag can be tracked in logic independently of what random item its matching
-# checkable location above happens to hold.
+# Event-only locationsso they don't enter the norma item pool
 EVENT_LOCATIONS = [
     "Chambre Finale",
     "Dedan Defeated Event", "Japhet Defeated Event", "Enoch Defeated Event",
-    *[f"Zodiac Boss {i} Defeated Event" for i in range(1, 5)],
-    *[f"Secret Boss {i} Defeated Event" for i in range(1, 7)],
+    *[f"{name} Defeated Event" for name in ZODIAC_BOSS_NAMES],
+    "Sugar Defeated Event",
 ]
 
 
@@ -96,10 +106,10 @@ def _build_location_table() -> Dict[str, LocationData]:
     add(POSTAL_HINTS, LocationType.POSTAL_HINT)
     add(BOSS_LOCATIONS, LocationType.BOSS)
     add(ZODIAC_BOSS_LOCATIONS, LocationType.BOSS)
+    add(ADD_ON_LOCATIONS, LocationType.ADD_ON)
     add(PILLAR_ART_LOCATIONS, LocationType.PILLAR_ART)
-    add(BONUS_PILLAR_ART_LOCATIONS, LocationType.PILLAR_ART)
     add(SECRET_BOSS_LOCATIONS, LocationType.SECRET_BOSS)
-    add(NPC_LOCATIONS, LocationType.NPC)
+    add([SECRET_ENDING_LOCATION], LocationType.CHEST)
     for shop, slots in SHOP_SLOT_LOCATIONS.items():
         add(slots, LocationType.SHOP)
 
