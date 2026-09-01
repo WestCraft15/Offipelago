@@ -1,40 +1,133 @@
 ﻿using FangamerRPG;
+using HarmonyLib;
 using MelonLoader;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 namespace Offipelago
 {
     internal static class Patches
-    {
+	{
+		private static GameObject? _actorPrefab = null;
+
+		public static GameObject GetActorPrefab()
+		{
+			if (_actorPrefab == null)
+			{
+				_actorPrefab = new() { name = "OffipelagoActorPrefab", hideFlags = HideFlags.HideAndDontSave };
+				_actorPrefab.SetActive(true);
+				GameObject sprite = new() { name = "Sprite" };
+				sprite.transform.parent = _actorPrefab.transform;
+				var renderer = sprite.AddComponent<SpriteRenderer>();
+				renderer.sortingLayerName = "Foreground";
+				FPGLogicActor actor = _actorPrefab.AddComponent<FPGLogicActor>();
+				actor.states = [new FPGLogicActorState(actor)];
+				actor.states[0].collision = true;
+				actor.enabled = true;
+			}
+			return _actorPrefab;
+		}
+
+		/// <summary>
+		/// Gets an unpatched actor by it's <paramref name="eventID"/>. You will rarely need to use this instead of <c>GetActor()</c>.
+		/// </summary>
+		/// <param name="eventID">The id of the actor to find.</param>
+		/// <returns>The actor, if one was found. Null otherwise.</returns>
 		private static FPGLogicActor GetUnpatchedActor(int eventID)
 		{
 			return Object.FindObjectsByType<FPGLogicActor>(FindObjectsSortMode.None).FirstOrDefault(actor => actor.eventID == eventID && !actor.gameObject.scene.name.StartsWith("patch"));
 		}
 
-		private static FPGLogicActor GetActor(int eventID)
+		/// <summary>
+		/// Gets a patched actor by it's <paramref name="eventID"/>. You will rarely need to use this instead of <c>GetActor()</c>.
+		/// </summary>
+		/// <param name="eventID">The id of the actor to find.</param>
+		/// <returns>The actor, if one was found. Null otherwise.</returns>
+		private static FPGLogicActor GetPatchedActor(int eventID)
 		{
 			return Object.FindObjectsByType<FPGLogicActor>(FindObjectsSortMode.None).FirstOrDefault(actor => actor.eventID == eventID && actor.gameObject.scene.name.StartsWith("patch"));
 		}
 
-		private static FPGLogicActor GetAnyActor(int eventID)
+		/// <summary>
+		/// Gets an actor by it's <paramref name="eventID"/>.
+		/// </summary>
+		/// <param name="eventID">The id of the actor to find.</param>
+		/// <returns>The actor, if one was found. Null otherwise.</returns>
+		private static FPGLogicActor GetActor(int eventID)
 		{
-			return GetActor(eventID) ?? GetUnpatchedActor(eventID);
+			return GetPatchedActor(eventID) ?? GetUnpatchedActor(eventID);
 		}
 
-		private static void PatchChest(int eventID, long location_id, int textCmd = 4, int inventoryCommand = 5)
+		[HarmonyPatch(typeof(FPGLogicActor), "Awake")]
+		public class FixNullReferenceException
 		{
-			var actor = GetAnyActor(eventID);
+			// Fixes a NullReferenceException in FPGLogicActor.Awake()
+			static bool Prefix(ref FPGLogicActor __instance, ref SpriteRenderer ____actorRenderer)
+			{
+				____actorRenderer = __instance.GetComponentInChildren<SpriteRenderer>(includeInactive: true);
+				__instance.transform.position = Vector3Int.FloorToInt(__instance.transform.position);
+				if (__instance.states is not null)
+				{
+					foreach (FPGLogicActorState state in __instance.states)
+					{
+						state.SetOwner(__instance);
+					}
+				}
+				return false;
+			}
+		}
+
+		/// <summary>
+		/// Create a new actor in the room with the specified <paramref name="eventID"/>.
+		/// Don't forget to call actor.Init() once you're done setting it up.
+		/// </summary>
+		/// <param name="eventID">The id of the actor to create.</param>
+		/// <returns>The newly created actor. Or null, if an actor with that ID already exists.</returns>
+		private static FPGLogicActor CreateActor(int eventID, int x, int y, GridDirection facing = GridDirection.South)
+		{
+			var actor = FPGOverworldMode.instance.SpawnNewLogicActor(GetActorPrefab(), new Vector2Int(x, y), facing);
+			actor.gameObject.hideFlags = HideFlags.None;
+			actor.gameObject.transform.SetParent(GameObject.Find("Actors").transform);
+			actor.GetComponent<FPGLogicActor>().eventID = eventID;
+			actor.name = $"EV{eventID:0000}";
+			return actor;
+		}
+
+		/// <summary>
+		/// Automatically patches a chest actor to instead send a check.
+		/// </summary>
+		/// <param name="eventID">The eventId of the chest.</param>
+		/// <param name="locationID">The locationID of the check.</param>
+		/// <param name="textCmd">Optionally specify the index of the FPGCmdShowText command. Default 4.</param>
+		/// <param name="inventoryCommand">Optionally specify the index of the FPGCmdChangeInventory command. Default 5.</param>
+		private static void PatchChest(int eventID, long locationID, int textCmd = 4, int inventoryCommand = 5)
+		{
+			var actor = GetActor(eventID);
 			actor.states[0].commands[textCmd] = CreateText("A check has been found.");
-			actor.states[0].commands[inventoryCommand] = new FPGCmdSendCheck(location_id);
+			actor.states[0].commands[inventoryCommand] = new FPGCmdSendCheck(locationID);
 		}
 
+		/// <summary>
+		/// Helper function to create a new line of dialog.
+		/// </summary>
+		/// <param name="text">The text string to display.</param>
+		/// <param name="old">Optionally copy the parameters of the FPGCmdShowText you will replace.</param>
+		/// <returns>A new FPGCmdShowTextUntranslated that contains your text string.</returns>
 		private static FPGCmdShowTextUntranslated CreateText(string text, FPGCmdShowText? old = null)
 		{
 			return new FPGCmdShowTextUntranslated(old)
 			{
 				text = text
 			};
+		}
+
+		private static FPGSpriteSheet[]? _sheets = null;
+
+		private static FPGSpriteSheet GetSpriteSheet(string name)
+		{
+			_sheets = Resources.FindObjectsOfTypeAll<FPGSpriteSheet>();
+			return _sheets.FirstOrDefault(o => o.name == name);
 		}
 
 		public static void Post_003()
@@ -187,6 +280,7 @@ namespace Offipelago
 		}
 	}
 
+	// A version of FPGCmdShowText that doesn't try to get a translated string.
 	internal class FPGCmdShowTextUntranslated : FPGCmdShowText
 	{
 		public FPGCmdShowTextUntranslated(FPGCmdShowText? old)
@@ -201,15 +295,16 @@ namespace Offipelago
 		public override void ApplyLocalization() { }
 	}
 
-	internal class FPGCmdSendCheck(long location_id) : FPGCommand
+	// An FPGCommand that sends an Archipelago check when activated.
+	internal class FPGCmdSendCheck(long locationID) : FPGCommand
 	{
-		public long location_id = location_id;
+		public long locationID = locationID;
 
 		public override void Activate(FPGLogicInterpreter logic)
 		{
-			Offipelago.session.Locations.CompleteLocationChecksAsync(location_id);
+			Offipelago.session.Locations.CompleteLocationChecksAsync(locationID);
 
-			MelonLogger.Msg($"Sent Check: {location_id}");
+			MelonLogger.Msg($"Sent Check: {locationID}");
 		}
 	}
 }

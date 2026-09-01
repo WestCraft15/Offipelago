@@ -26,17 +26,19 @@ namespace Offipelago
 
 			session = ArchipelagoSessionFactory.CreateSession("localhost");
 
-			session.ConnectAsync().Wait();
+			//session.ConnectAsync().Wait();
 
-			session.LoginAsync("Off", "West", ItemsHandlingFlags.AllItems).Wait();
+			//session.LoginAsync("Off", "West", ItemsHandlingFlags.AllItems).Wait();
 		}
 	}
 
 	[HarmonyPatch(typeof(FPGOverworldMode), "ApplyMapPatch", MethodType.Enumerator)]
-	public class ApplyMapPatch_Patch
+	public class ApplyPostPatch
 	{
 		public static readonly MethodInfo PatchInfo = SymbolExtensions.GetMethodInfo(() => Patch());
 
+		// Places a call to the Patch() function inside of the FPGOverworldMode.ApplyMapPatch() function.
+		// It has to be done using the transpiled code because the function is async.
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
 			var found = 0;
@@ -54,6 +56,7 @@ namespace Offipelago
 			}
 		}
 
+		// Applies a post patch to the room, if the corresponding function is found in the Patches class.
 		static void Patch()
 		{
 			string patch = "Post_" + FPGOverworldMode.instance.gameState.map[..3];
@@ -69,19 +72,21 @@ namespace Offipelago
 	}
 
 	[HarmonyPatch(typeof(FPGOverworldMode), "DoMapTravel", MethodType.Enumerator)]
-	public class DoMapTravel_Patch
+	public class ApplyPrePatch
 	{
 		public static readonly MethodInfo PatchInfo = SymbolExtensions.GetMethodInfo(() => Patch());
 
+		// Calls OffExplorer.NewRoom() when a new room is loaded.
 		static void Postfix()
 		{
 			if (FPGOverworldMode.instance.isReady)
 			{
-				MelonLogger.Msg("New room loaded");
 				OffExplorer.instance.NewRoom();
 			}
 		}
 
+		// Places a call to the Patch() function inside of the FPGOverworldMode.DoMapTravel() function.
+		// It has to be done using the transpiled code because the function is async.
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
 			var found = 0;
@@ -99,6 +104,9 @@ namespace Offipelago
 			}
 		}
 
+		// Applies a pre patch to the room, if the corresponding function is found in the Patches class.
+		// You'll likely never need to make a pre patch, unless the room you're patching isn't already patched by the game.
+		// Confusing, huh?
 		static void Patch()
 		{
 			string patch = "Pre_" + FPGOverworldMode.instance.gameState.map[..3];

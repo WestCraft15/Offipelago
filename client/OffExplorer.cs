@@ -45,6 +45,10 @@ namespace Offipelago
 
 		private static readonly List<Message> messages = [];
 
+		/// <summary>
+		/// Adds a message to the on-screen display.
+		/// </summary>
+		/// <param name="message">The message to display.</param>
 		public static void AddMessage(string message)
 		{
 			messages.Add(new(message));
@@ -54,6 +58,7 @@ namespace Offipelago
 			}
 		}
 
+		// Runs once when the instance is created.
 		void Start()
 		{
 			MelonLogger.Msg("Started OFF Explorer v1.0");
@@ -75,6 +80,8 @@ namespace Offipelago
 			instance = this;
 		}
 
+		// Runs on every frame.
+		// Handles keybinds, as well as updating the message display.
 		void Update()
 		{
 			if (FPGOverworldMode.instance is null)
@@ -217,12 +224,14 @@ namespace Offipelago
 			}
 		}
 
+		// Run when a new room is loaded.
 		public void NewRoom()
 		{
-			ScanRoom();
+			//ScanRoom(); // not super useful right now
 			current_actor = 1;
 		}
 
+		// Scans all actors in a room and logs any that are of note.
 		public void ScanRoom()
 		{
 			AddMessage($"Important actors for room {FPGOverworldMode.instance.GetCurrentMapComponent().GetMapName()[..3]} printed to console");
@@ -254,11 +263,17 @@ namespace Offipelago
 			}
 		}
 
+		/// <summary>
+		/// Gets an actor by it's <paramref name="eventID"/>.
+		/// </summary>
+		/// <param name="eventID">The id of the actor to find.</param>
+		/// <returns>The actor, if one was found. Null otherwise.</returns>
 		private static FPGLogicActor GetActor(int eventID)
 		{
 			return FindObjectsByType<FPGLogicActor>(FindObjectsSortMode.None).FirstOrDefault(actor => actor.eventID == eventID);
 		}
 
+		// Gets a string representation of an FPGCommand.
 		private static string CommandDescription(FPGCommand command, ref int indent, ref int subIndent)
 		{
 			switch (command.GetType().Name)
@@ -307,6 +322,7 @@ namespace Offipelago
 			}
 		}
 
+		// Separate function specifically to format the conditions in an FPGCmdIf.
 		private static string FormatIfConditions(List<FPGCondition> conditions)
 		{
 			string cond = "";
@@ -326,6 +342,7 @@ namespace Offipelago
 			return cond;
 		}
 
+		// Converts FPGCondVariable.OpType into a more standard notation.
 		private static string FormatOperandType(FPGCondVariable.OpType opType)
 		{
 			return opType switch
@@ -340,6 +357,8 @@ namespace Offipelago
 			};
 		}
 
+		// Indents FPGCommand based on their depth inside of FPGCmdIf/FPGCmdIfChoice.
+		// Could probably use the built in FPGCommand.indent, but I didn't trust it to be accurate.
 		private static string Indent(int indent)
 		{
 			string str = "";
@@ -350,19 +369,15 @@ namespace Offipelago
 			return str;
 		}
 
-
+		// Leftover from an earlier version.
+		// I kept it just in case I needed to patch encounters at some point.
 		[HarmonyPatch(typeof(BATMain), "LoadEncounter")]
 		public class LoadEncounter_Patch
 		{
-			static void Prefix(ref BATEncounter encounter)
-			{
-				//encounter.alpha.active = instance.addons[0];
-				//encounter.omega.active = instance.addons[1];
-				//encounter.epsilon.active = instance.addons[2];
-			}
+			static void Prefix(ref BATEncounter encounter) { }
 		}
 
-
+		// Activates noclip by simply telling the game that all movement is valid.
 		[HarmonyPatch(typeof(FPGLogicActor), "ValidateMove")]
 		public class NoClipPatch
 		{
