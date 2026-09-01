@@ -83,15 +83,29 @@ namespace Offipelago
 		/// Don't forget to call actor.Init() once you're done setting it up.
 		/// </summary>
 		/// <param name="eventID">The id of the actor to create.</param>
+		/// <param name="x">The x coordinate of the new actor.</param>
+		/// <param name="y">The y coordinate of the new actor.</param>
+		/// <param name="facing">Optionally specify a facing direction for the actor. Default is South</param>
 		/// <returns>The newly created actor. Or null, if an actor with that ID already exists.</returns>
 		private static FPGLogicActor CreateActor(int eventID, int x, int y, GridDirection facing = GridDirection.South)
 		{
+			if (GetActor(eventID) is not null) return null;
 			var actor = FPGOverworldMode.instance.SpawnNewLogicActor(GetActorPrefab(), new Vector2Int(x, y), facing);
 			actor.gameObject.hideFlags = HideFlags.None;
 			actor.gameObject.transform.SetParent(GameObject.Find("Actors").transform);
 			actor.GetComponent<FPGLogicActor>().eventID = eventID;
 			actor.name = $"EV{eventID:0000}";
 			return actor;
+		}
+
+		/// <summary>
+		/// Destroys an actor with the specified <paramref name="eventID"/>.
+		/// </summary>
+		/// <param name="eventID">The id of the actor to destroy.</param>
+		private static void DestroyActor(int eventID)
+		{
+			Object.DestroyImmediate(GetActor(eventID).gameObject);
+			FPGOverworldMode.instance.GetCurrentMapComponent().BuildLogicActorCache();
 		}
 
 		/// <summary>
