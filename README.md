@@ -1,14 +1,19 @@
 # Offipelago
-Archipelago for OFF (2025)
+Archipelago for OFF (2025).
 
 ## Requirements
 - OFF (Steam)
 - Visual Studio 2022
 
 ## Installation
-- Install MelonLoader on your copy of OFF
-- Build the mod
-- Place Offipelago.dll and Archipelago.MultiClient.Net.dll in the Mods folder
+- Add MelonLoader to your copy of OFF.
+- Build the mod (see below).
+- Place Offipelago.dll and Archipelago.MultiClient.Net.dll in the Mods folder.
+
+## Building
+- Create a copy of `client/Properties/GamePath.props.template`.
+- Rename it to `GamePath.props`.
+- Optionally change the `GamePath` property in the file, if your OFF installation is in a different place.
 
 ## OffExplorer
 A custom made event browser for OFF. Allows you to look through all actors in a room.
@@ -37,9 +42,9 @@ that are used often, such as chests.
 
 ### Using OffExplorer for development
 In general, the process looks like this:
-- Enter the room you wish to modify
-- A message will appear in the console showing the room number and any important actors
-- Find actors using the I/K keys, and view their events with L
-- Create a patch for the room to modify the actor(s)
+- Enter the room you wish to modify.
+- Press J to output a message to the console showing the room number and any important actors.
+- Find actors using the I/K keys, and view their events with L.
+- Create a patch for the room to modify the actor(s).
 
 ### If you have any questions, ask WestCraft15 on Discord for help.
