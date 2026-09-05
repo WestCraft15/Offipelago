@@ -8,8 +8,11 @@
 		<FileVersion>1.0.0.0</FileVersion>
 	</PropertyGroup>
 	<ItemGroup>
+	  <Compile Include="FPGCmdSendCheck.cs" />
+	  <Compile Include="FPGCmdShowTextUntranslated.cs" />
 	  <Compile Include="Offipelago.cs" />
 	  <Compile Include="OffExplorer.cs" />
+	  <Compile Include="PatchBase.cs" />
 	  <Compile Include="Patches.cs" />
 	</ItemGroup>
 
